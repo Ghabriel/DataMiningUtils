@@ -2,7 +2,7 @@ import {Call, Callable} from "./types"
 import {Interface} from "./Interface"
 
 const id = "[A-Za-z_][A-Za-z0-9_]*";
-const literal = "[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*";
+const literal = "(?:[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*|" + id + ")";
 const paramList = "(?: *" + id + "(?: *, *" + id + " *)*)?";
 const argList = "(?: *" + literal + "(?: *, *" + literal + " *)*)?";
 const funDefSep = "(?:\\.|\\s)";
@@ -80,9 +80,11 @@ export class Parser {
 				let actualNum = call.params.length;
 				if (expectedNum == actualNum) {
 					for (var i = 0; i < actualNum; i++) {
-						this.assign(fn.params[i], call.params[i]);
+						this.assign(fn.params[i], eval(call.params[i]));
 					}
-					return this.eval(fn);
+					var result = this.eval(fn);
+					this.assign("ans", result);
+					return result;
 				} else {
 					return "wrong number of arguments (expected "
 						+ expectedNum + ", got " + actualNum + ")";
@@ -162,6 +164,11 @@ export class Parser {
 				name: "rand",
 				params: [],
 				body: "Math.random()"
+			},
+			{
+				name: "ans",
+				params: [],
+				body: "ans"
 			}
 		];
 
