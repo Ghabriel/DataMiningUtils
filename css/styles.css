@@ -1,0 +1,17 @@
+#command {
+	width: 70%;
+}
+
+#console div div {
+	display: inline;
+}
+
+.fn_def > div,
+.fn_call > div {
+	margin-right: 30px;
+}
+
+.fn_def .params,
+.fn_call .params {
+	color: blue;
+}
