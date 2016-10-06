@@ -42,7 +42,7 @@ define("Interface", ["require", "exports"], function (require, exports) {
 define("Parser", ["require", "exports", "types"], function (require, exports, types_1) {
     "use strict";
     var id = "[A-Za-z_][A-Za-z0-9_]*";
-    var literal = "[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*";
+    var literal = "(?:[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*|" + id + ")";
     var paramList = "(?: *" + id + "(?: *, *" + id + " *)*)?";
     var argList = "(?: *" + literal + "(?: *, *" + literal + " *)*)?";
     var funDefSep = "(?:\\.|\\s)";
@@ -114,9 +114,11 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     var actualNum = call.params.length;
                     if (expectedNum == actualNum) {
                         for (var i = 0; i < actualNum; i++) {
-                            this.assign(fn.params[i], call.params[i]);
+                            this.assign(fn.params[i], eval(call.params[i]));
                         }
-                        return this.eval(fn);
+                        var result = this.eval(fn);
+                        this.assign("ans", result);
+                        return result;
                     }
                     else {
                         return "wrong number of arguments (expected "
@@ -193,6 +195,11 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     name: "rand",
                     params: [],
                     body: "Math.random()"
+                },
+                {
+                    name: "ans",
+                    params: [],
+                    body: "ans"
                 }
             ];
             for (var _i = 0, _a = this.functions; _i < _a.length; _i++) {
