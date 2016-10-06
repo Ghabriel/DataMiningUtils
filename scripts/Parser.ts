@@ -5,7 +5,7 @@ const id = "[A-Za-z_][A-Za-z0-9_]*";
 const literal = "(?:[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*|" + id + ")";
 const paramList = "(?: *" + id + "(?: *, *" + id + " *)*)?";
 const argList = "(?: *" + literal + "(?: *, *" + literal + " *)*)?";
-const funDefSep = "(?:\\.|\\s)";
+const funDefSep = "\\s";
 const funDef = "(" + id + ")" + funDefSep + "(" + paramList + ")" + funDefSep + "(.*)";
 const funCall = "(" + id + ")(?:\\((" + argList + ")\\))?";
 const regex = {
@@ -34,6 +34,11 @@ export class Parser {
 	}
 
 	parse(command: string): boolean {
+		if (command == "") {
+			command = this.lastCommand;
+		}
+
+		this.lastCommand = command;
 		var matches = command.match(regex.funDef);
 		if (matches) {
 			let action = new Callable();
@@ -74,15 +79,26 @@ export class Parser {
 	}
 
 	exec(call: Call): string {
+		for (var name in this.builtin) {
+			if (this.builtin.hasOwnProperty(name)) {
+				if (name == call.name) {
+					let str = name + "(" + call.params.join(",") + ")";
+					let result = eval(str);
+					this.assign("ans", result);
+					return result;
+				}
+			}
+		}
+
 		for (let fn of this.functions) {
 			if (fn.name == call.name) {
 				let expectedNum = fn.params.length;
 				let actualNum = call.params.length;
 				if (expectedNum == actualNum) {
-					for (var i = 0; i < actualNum; i++) {
+					for (let i = 0; i < actualNum; i++) {
 						this.assign(fn.params[i], eval(call.params[i]));
 					}
-					var result = this.eval(fn);
+					let result = this.eval(fn);
 					this.assign("ans", result);
 					return result;
 				} else {
@@ -172,11 +188,46 @@ export class Parser {
 			}
 		];
 
+		function avg(...values: number[]) {
+			var sum = 0;
+			for (let value of values) {
+				sum += value;
+			}
+			return sum / values.length;
+		};
+
+		function vari(...values: number[]) {
+			var average = avg(...values);
+			var sum = 0;
+			for (let value of values) {
+				sum += Math.pow(value - average, 2);
+			}
+			return sum / (values.length - 1);
+		};
+
+		function sd(...values: number[]) {
+			return Math.sqrt(vari(...values));
+		}
+
+		this.builtin = {
+			avg: avg,
+			vari: vari,
+			sd: sd
+		};
+
 		for (let fn of this.functions) {
 			this.register(fn);
+		}
+
+		for (var name in this.builtin) {
+			if (this.builtin.hasOwnProperty(name)) {
+				window[name] = this.builtin[name];
+			}
 		}
 	}
 
 	private functions: Callable[] = [];
+	private builtin: any;
 	private ui: Interface;
+	private lastCommand: string;
 }

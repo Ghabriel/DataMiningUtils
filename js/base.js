@@ -45,7 +45,7 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
     var literal = "(?:[0-9]*\.[0-9]+|[0-9]+\.?[0-9]*|" + id + ")";
     var paramList = "(?: *" + id + "(?: *, *" + id + " *)*)?";
     var argList = "(?: *" + literal + "(?: *, *" + literal + " *)*)?";
-    var funDefSep = "(?:\\.|\\s)";
+    var funDefSep = "\\s";
     var funDef = "(" + id + ")" + funDefSep + "(" + paramList + ")" + funDefSep + "(.*)";
     var funCall = "(" + id + ")(?:\\((" + argList + ")\\))?";
     var regex = {
@@ -72,6 +72,10 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
             });
         };
         Parser.prototype.parse = function (command) {
+            if (command == "") {
+                command = this.lastCommand;
+            }
+            this.lastCommand = command;
             var matches = command.match(regex.funDef);
             if (matches) {
                 var action = new types_1.Callable();
@@ -107,6 +111,16 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
             this.assign(fn.name, content);
         };
         Parser.prototype.exec = function (call) {
+            for (var name in this.builtin) {
+                if (this.builtin.hasOwnProperty(name)) {
+                    if (name == call.name) {
+                        var str = name + "(" + call.params.join(",") + ")";
+                        var result = eval(str);
+                        this.assign("ans", result);
+                        return result;
+                    }
+                }
+            }
             for (var _i = 0, _a = this.functions; _i < _a.length; _i++) {
                 var fn = _a[_i];
                 if (fn.name == call.name) {
@@ -202,9 +216,53 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     body: "ans"
                 }
             ];
+            function avg() {
+                var values = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    values[_i - 0] = arguments[_i];
+                }
+                var sum = 0;
+                for (var _a = 0, values_1 = values; _a < values_1.length; _a++) {
+                    var value = values_1[_a];
+                    sum += value;
+                }
+                return sum / values.length;
+            }
+            ;
+            function vari() {
+                var values = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    values[_i - 0] = arguments[_i];
+                }
+                var average = avg.apply(void 0, values);
+                var sum = 0;
+                for (var _a = 0, values_2 = values; _a < values_2.length; _a++) {
+                    var value = values_2[_a];
+                    sum += Math.pow(value - average, 2);
+                }
+                return sum / (values.length - 1);
+            }
+            ;
+            function sd() {
+                var values = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    values[_i - 0] = arguments[_i];
+                }
+                return Math.sqrt(vari.apply(void 0, values));
+            }
+            this.builtin = {
+                avg: avg,
+                vari: vari,
+                sd: sd
+            };
             for (var _i = 0, _a = this.functions; _i < _a.length; _i++) {
                 var fn = _a[_i];
                 this.register(fn);
+            }
+            for (var name in this.builtin) {
+                if (this.builtin.hasOwnProperty(name)) {
+                    window[name] = this.builtin[name];
+                }
             }
         };
         return Parser;

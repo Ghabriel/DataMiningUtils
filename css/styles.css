@@ -1,5 +1,12 @@
 #command {
-	width: 70%;
+	/*width: 70%;*/
+	border: 1px solid #BBB;
+	font-size: 30px;
+	width: 100%;
+}
+
+#console {
+	font-size: 23px;
 }
 
 #console div div {
