@@ -209,10 +209,20 @@ export class Parser {
 			return Math.sqrt(vari(...values));
 		}
 
+		function dist(x1, y1, x2, y2) {
+			return (Math.abs(x1 - x2) + Math.abs(y1 - y2))/2;
+		}
+
+		function eucldist(x1, y1, x2, y2) {
+			return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+		}
+
 		this.builtin = {
 			avg: avg,
 			vari: vari,
-			sd: sd
+			sd: sd,
+			dist: dist,
+			eucldist: eucldist
 		};
 
 		for (let fn of this.functions) {

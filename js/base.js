@@ -250,10 +250,18 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 }
                 return Math.sqrt(vari.apply(void 0, values));
             }
+            function dist(x1, y1, x2, y2) {
+                return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) / 2;
+            }
+            function eucldist(x1, y1, x2, y2) {
+                return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+            }
             this.builtin = {
                 avg: avg,
                 vari: vari,
-                sd: sd
+                sd: sd,
+                dist: dist,
+                eucldist: eucldist
             };
             for (var _i = 0, _a = this.functions; _i < _a.length; _i++) {
                 var fn = _a[_i];
