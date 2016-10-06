@@ -1,3 +1,23 @@
+* {
+	font-family: monospace;
+}
+
+#header {
+	display: flex;
+	height: 50px;
+	width: 100%;
+}
+
+#container {
+	display: inline-block;
+	flex: 1;
+}
+
+#header input {
+	height: 100%;
+	vertical-align: top;
+}
+
 #command {
 	/*width: 70%;*/
 	border: 1px solid #BBB;
