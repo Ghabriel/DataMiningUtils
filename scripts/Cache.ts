@@ -9,7 +9,7 @@ export class Cache {
 			} else if(reg.active) {
 				console.log('Service worker active');
 			}
-		
+
 			}).catch(function(error) {
 				console.log('Registration failed with ' + error);
 			});
