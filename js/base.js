@@ -106,6 +106,7 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 }
             });
             this.inputs.push(input);
+            input.focus();
         };
         Parser.prototype.parse = function (command) {
             if (command == "") {
@@ -219,6 +220,7 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 var input = _a[_i];
                 input.value = command;
             }
+            this.inputs[0].focus();
         };
         Parser.prototype.loadNative = function () {
             this.functions = [
@@ -241,6 +243,11 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     name: "ln",
                     params: ["x"],
                     body: "Math.log(x)"
+                },
+                {
+                    name: "pow",
+                    params: ["x", "y"],
+                    body: "Math.pow(x,y)"
                 },
                 {
                     name: "sqrt",
@@ -293,9 +300,19 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     body: "(abs(x1-x2) + abs(y1-y2))/2"
                 },
                 {
-                    name: "eucldist",
+                    name: "edist",
                     params: ["x1", "y1", "x2", "y2"],
-                    body: "sqrt(pow(x1-x2, 2) + pow(y1-y2, 2))"
+                    body: "Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2))"
+                },
+                {
+                    name: "mdist",
+                    params: ["x1", "y1", "x2", "y2"],
+                    body: "abs(x1-x2) + abs(y1-y2)"
+                },
+                {
+                    name: "cdist",
+                    params: ["x1", "y1", "x2", "y2"],
+                    body: "max(abs(x1-x2), abs(y1-y2))"
                 }
             ];
             function avg() {

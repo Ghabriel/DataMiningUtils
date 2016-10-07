@@ -48,6 +48,7 @@ export class Parser {
 			}
 		});
 		this.inputs.push(input);
+		input.focus();
 	}
 
 	parse(command: string): boolean {
@@ -169,6 +170,7 @@ export class Parser {
 		for (let input of this.inputs) {
 			input.value = command;
 		}
+		this.inputs[0].focus();
 	}
 
 	loadNative(): void {
@@ -192,6 +194,11 @@ export class Parser {
 				name: "ln",
 				params: ["x"],
 				body: "Math.log(x)"
+			},
+			{
+				name: "pow",
+				params: ["x","y"],
+				body: "Math.pow(x,y)"
 			},
 			{
 				name: "sqrt",
@@ -244,9 +251,19 @@ export class Parser {
 				body: "(abs(x1-x2) + abs(y1-y2))/2"
 			},
 			{
-				name: "eucldist",
+				name: "edist",
 				params: ["x1","y1","x2","y2"],
-				body: "sqrt(pow(x1-x2, 2) + pow(y1-y2, 2))"
+				body: "Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2))"
+			},
+			{
+				name: "mdist",
+				params: ["x1","y1","x2","y2"],
+				body: "abs(x1-x2) + abs(y1-y2)"
+			},
+			{
+				name: "cdist",
+				params: ["x1","y1","x2","y2"],
+				body: "max(abs(x1-x2), abs(y1-y2))"
 			}
 		];
 
