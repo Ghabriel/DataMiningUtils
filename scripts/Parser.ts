@@ -8,16 +8,22 @@ const argList = "(?: *" + literal + "(?: *, *" + literal + " *)*)?";
 const funDefSep = "\\s";
 const funDef = "(" + id + ")" + funDefSep + "(" + paramList + ")" + funDefSep + "(.*)";
 const funCall = "(" + id + ")(?:\\((" + argList + ")\\))?";
+const evalCmd = "^(eval)\\((.*)\\)$";
+const defCmd = "^(def) (" + id + ") (.*)";
 const regex = {
 	id: new RegExp(id),
 	paramList: new RegExp(paramList),
 	funDef: new RegExp(funDef),
-	funCall: new RegExp(funCall)
+	funCall: new RegExp(funCall),
+	evalCmd: evalCmd,
+	defCmd: defCmd
 };
 
 export class Parser {
 	constructor(ui: Interface) {
+		ui.addListener(this);
 		this.ui = ui;
+		this.inputs = [];
 	}
 
 	watch(input: HTMLInputElement) {
@@ -41,6 +47,7 @@ export class Parser {
 					break;
 			}
 		});
+		this.inputs.push(input);
 	}
 
 	parse(command: string): boolean {
@@ -49,31 +56,48 @@ export class Parser {
 		}
 		this.lastCommand = command;
 
-		var matches = command.match(regex.funDef);
+		let matches = command.match(regex.defCmd);
+		if (matches) {
+			let action = new Call();
+			action.name = matches[1];
+			action.params = [matches[2]];
+			let result;
+			try {
+				result = eval(matches[3]);
+				window[matches[2]] = result;
+			} catch(e) {
+				result = "error";
+			}
+			this.assign("ans", result);
+			this.ui.newCall(command, action, result);
+			return true;
+		}
+
+		matches = command.match(regex.funDef);
 		if (matches) {
 			let action = new Callable();
 			action.name = matches[1];
 			action.params = this.split(matches[2], ",");
 			action.body = matches[3];
 			this.functions.push(action);
-			this.ui.newFunction(action);
+			this.ui.newFunction(command, action);
 			this.register(action);
 			return true;
 		}
 
-		if (command.substr(0, 4) == "eval") {
+		matches = command.match(regex.evalCmd);
+		if (matches) {
 			let action = new Call();
-			action.name = "eval";
+			action.name = matches[1];
 			action.params = [];
 			let result;
 			try {
-				result = eval(command);
+				result = eval(matches[2]);
 			} catch(e) {
 				result = "error";
 			}
-
 			this.assign("ans", result);
-			this.ui.newCall(action, result);
+			this.ui.newCall(command, action, result);
 			return true;
 		}
 
@@ -83,7 +107,7 @@ export class Parser {
 			action.name = matches[1];
 			action.params = this.split(matches[2], ",");
 			let output = this.exec(action);
-			this.ui.newCall(action, output);
+			this.ui.newCall(command, action, output);
 			return true;
 		}
 
@@ -139,6 +163,12 @@ export class Parser {
 
 	eval(fn: Callable): string {
 		return eval(fn.body);
+	}
+
+	setText(command: string): void {
+		for (let input of this.inputs) {
+			input.value = command;
+		}
 	}
 
 	loadNative(): void {
@@ -278,4 +308,5 @@ export class Parser {
 	private builtin: any;
 	private ui: Interface;
 	private lastCommand: string;
+	private inputs: HTMLInputElement[];
 }

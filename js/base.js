@@ -19,22 +19,40 @@ define("Interface", ["require", "exports"], function (require, exports) {
     var Interface = (function () {
         function Interface(console) {
             this.console = console;
+            this.listeners = [];
         }
-        Interface.prototype.newFunction = function (fn) {
+        Interface.prototype.addListener = function (listener) {
+            this.listeners.push(listener);
+        };
+        Interface.prototype.newFunction = function (command, fn) {
             var wrapper = document.createElement("div");
             wrapper.classList.add("fn_def");
             wrapper.innerHTML += "<div class='name'>" + fn.name + "</div>";
             wrapper.innerHTML += "<div class='params'>" + fn.params.join(",") + "</div>";
             wrapper.innerHTML += "<div class='body'>" + fn.body + "</div>";
             $(this.console).prepend(wrapper);
+            var self = this;
+            wrapper.addEventListener("click", function () {
+                self.trigger(command);
+            });
         };
-        Interface.prototype.newCall = function (call, result) {
+        Interface.prototype.newCall = function (command, call, result) {
             var wrapper = document.createElement("div");
             wrapper.classList.add("fn_call");
             wrapper.innerHTML += "<div class='name'>" + call.name + "</div>";
             wrapper.innerHTML += "<div class='params'>" + call.params.join(",") + "</div>";
             wrapper.innerHTML += "<div class='result'>" + result + "</div>";
             $(this.console).prepend(wrapper);
+            var self = this;
+            wrapper.addEventListener("click", function () {
+                self.trigger(command);
+            });
+        };
+        Interface.prototype.trigger = function (command) {
+            for (var _i = 0, _a = this.listeners; _i < _a.length; _i++) {
+                var listener = _a[_i];
+                listener.setText(command);
+            }
         };
         return Interface;
     }());
@@ -49,16 +67,22 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
     var funDefSep = "\\s";
     var funDef = "(" + id + ")" + funDefSep + "(" + paramList + ")" + funDefSep + "(.*)";
     var funCall = "(" + id + ")(?:\\((" + argList + ")\\))?";
+    var evalCmd = "^(eval)\\((.*)\\)$";
+    var defCmd = "^(def) (" + id + ") (.*)";
     var regex = {
         id: new RegExp(id),
         paramList: new RegExp(paramList),
         funDef: new RegExp(funDef),
-        funCall: new RegExp(funCall)
+        funCall: new RegExp(funCall),
+        evalCmd: evalCmd,
+        defCmd: defCmd
     };
     var Parser = (function () {
         function Parser(ui) {
             this.functions = [];
+            ui.addListener(this);
             this.ui = ui;
+            this.inputs = [];
         }
         Parser.prototype.watch = function (input) {
             var self = this;
@@ -81,36 +105,55 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                         break;
                 }
             });
+            this.inputs.push(input);
         };
         Parser.prototype.parse = function (command) {
             if (command == "") {
                 command = this.lastCommand;
             }
             this.lastCommand = command;
-            var matches = command.match(regex.funDef);
+            var matches = command.match(regex.defCmd);
+            if (matches) {
+                var action = new types_1.Call();
+                action.name = matches[1];
+                action.params = [matches[2]];
+                var result = void 0;
+                try {
+                    result = eval(matches[3]);
+                    window[matches[2]] = result;
+                }
+                catch (e) {
+                    result = "error";
+                }
+                this.assign("ans", result);
+                this.ui.newCall(command, action, result);
+                return true;
+            }
+            matches = command.match(regex.funDef);
             if (matches) {
                 var action = new types_1.Callable();
                 action.name = matches[1];
                 action.params = this.split(matches[2], ",");
                 action.body = matches[3];
                 this.functions.push(action);
-                this.ui.newFunction(action);
+                this.ui.newFunction(command, action);
                 this.register(action);
                 return true;
             }
-            if (command.substr(0, 4) == "eval") {
+            matches = command.match(regex.evalCmd);
+            if (matches) {
                 var action = new types_1.Call();
-                action.name = "eval";
+                action.name = matches[1];
                 action.params = [];
                 var result = void 0;
                 try {
-                    result = eval(command);
+                    result = eval(matches[2]);
                 }
                 catch (e) {
                     result = "error";
                 }
                 this.assign("ans", result);
-                this.ui.newCall(action, result);
+                this.ui.newCall(command, action, result);
                 return true;
             }
             matches = command.match(regex.funCall);
@@ -119,7 +162,7 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 action.name = matches[1];
                 action.params = this.split(matches[2], ",");
                 var output = this.exec(action);
-                this.ui.newCall(action, output);
+                this.ui.newCall(command, action, output);
                 return true;
             }
             return false;
@@ -170,6 +213,12 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
         };
         Parser.prototype.eval = function (fn) {
             return eval(fn.body);
+        };
+        Parser.prototype.setText = function (command) {
+            for (var _i = 0, _a = this.inputs; _i < _a.length; _i++) {
+                var input = _a[_i];
+                input.value = command;
+            }
         };
         Parser.prototype.loadNative = function () {
             this.functions = [
@@ -323,14 +372,14 @@ define("main", ["require", "exports", "Interface", "Parser"], function (require,
     $(document).ready(function () {
         var input = document.querySelector("#command");
         var console = document.querySelector("#console");
-        var button = document.querySelector("#submit");
+        var submit = document.querySelector("#submit");
         var parser = new Parser_1.Parser(new Interface_1.Interface(console));
-        button.addEventListener("click", function () {
+        parser.loadNative();
+        parser.watch(input);
+        submit.addEventListener("click", function () {
             if (parser.parse(input.value)) {
                 input.value = "";
             }
         });
-        parser.loadNative();
-        parser.watch(input);
     });
 });
