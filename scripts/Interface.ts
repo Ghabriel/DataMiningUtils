@@ -1,3 +1,5 @@
+/// <reference path="jQuery.d.ts" />
+
 import {Call, Callable} from "./types"
 
 export class Interface {
@@ -11,7 +13,7 @@ export class Interface {
 		wrapper.innerHTML += "<div class='name'>" + fn.name + "</div>";
 		wrapper.innerHTML += "<div class='params'>" + fn.params.join(",") + "</div>";
 		wrapper.innerHTML += "<div class='body'>" + fn.body + "</div>";
-		this.console.appendChild(wrapper);
+		$(this.console).prepend(wrapper);
 	}
 
 	newCall(call: Call, result: string) {
@@ -20,7 +22,7 @@ export class Interface {
 		wrapper.innerHTML += "<div class='name'>" + call.name + "</div>";
 		wrapper.innerHTML += "<div class='params'>" + call.params.join(",") + "</div>";
 		wrapper.innerHTML += "<div class='result'>" + result + "</div>";
-		this.console.appendChild(wrapper);
+		$(this.console).prepend(wrapper);
 	}
 
 	private console: HTMLDivElement;

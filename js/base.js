@@ -13,6 +13,7 @@ define("types", ["require", "exports"], function (require, exports) {
     }());
     exports.Call = Call;
 });
+/// <reference path="jQuery.d.ts" />
 define("Interface", ["require", "exports"], function (require, exports) {
     "use strict";
     var Interface = (function () {
@@ -25,7 +26,7 @@ define("Interface", ["require", "exports"], function (require, exports) {
             wrapper.innerHTML += "<div class='name'>" + fn.name + "</div>";
             wrapper.innerHTML += "<div class='params'>" + fn.params.join(",") + "</div>";
             wrapper.innerHTML += "<div class='body'>" + fn.body + "</div>";
-            this.console.appendChild(wrapper);
+            $(this.console).prepend(wrapper);
         };
         Interface.prototype.newCall = function (call, result) {
             var wrapper = document.createElement("div");
@@ -33,7 +34,7 @@ define("Interface", ["require", "exports"], function (require, exports) {
             wrapper.innerHTML += "<div class='name'>" + call.name + "</div>";
             wrapper.innerHTML += "<div class='params'>" + call.params.join(",") + "</div>";
             wrapper.innerHTML += "<div class='result'>" + result + "</div>";
-            this.console.appendChild(wrapper);
+            $(this.console).prepend(wrapper);
         };
         return Interface;
     }());
@@ -61,6 +62,16 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
         }
         Parser.prototype.watch = function (input) {
             var self = this;
+            input.addEventListener("keydown", function (e) {
+                switch (e.keyCode) {
+                    case 190:
+                        if (this.value == "") {
+                            this.value = self.lastCommand;
+                            e.preventDefault();
+                        }
+                        break;
+                }
+            });
             input.addEventListener("keyup", function (e) {
                 switch (e.keyCode) {
                     case 13:
@@ -87,6 +98,21 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 this.register(action);
                 return true;
             }
+            if (command.substr(0, 4) == "eval") {
+                var action = new types_1.Call();
+                action.name = "eval";
+                action.params = [];
+                var result = void 0;
+                try {
+                    result = eval(command);
+                }
+                catch (e) {
+                    result = "error";
+                }
+                this.assign("ans", result);
+                this.ui.newCall(action, result);
+                return true;
+            }
             matches = command.match(regex.funCall);
             if (matches) {
                 var action = new types_1.Call();
@@ -97,12 +123,6 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 return true;
             }
             return false;
-        };
-        Parser.prototype.split = function (content, separator) {
-            if (content) {
-                return content.split(separator);
-            }
-            return [];
         };
         Parser.prototype.register = function (fn) {
             var content = "function(";
@@ -143,6 +163,9 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
             return "undefined function '" + call.name + "'";
         };
         Parser.prototype.assign = function (name, value) {
+            if (typeof value == "string") {
+                value = "'" + value + "'";
+            }
             eval("window." + name + "=" + value);
         };
         Parser.prototype.eval = function (fn) {
@@ -214,6 +237,16 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     name: "ans",
                     params: [],
                     body: "ans"
+                },
+                {
+                    name: "dist",
+                    params: ["x1", "y1", "x2", "y2"],
+                    body: "(abs(x1-x2) + abs(y1-y2))/2"
+                },
+                {
+                    name: "eucldist",
+                    params: ["x1", "y1", "x2", "y2"],
+                    body: "sqrt(pow(x1-x2, 2) + pow(y1-y2, 2))"
                 }
             ];
             function avg() {
@@ -250,18 +283,19 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                 }
                 return Math.sqrt(vari.apply(void 0, values));
             }
-            function dist(x1, y1, x2, y2) {
-                return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) / 2;
-            }
-            function eucldist(x1, y1, x2, y2) {
-                return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+            var self = this;
+            function help() {
+                for (var _i = 0, _a = self.functions; _i < _a.length; _i++) {
+                    var fn = _a[_i];
+                    console.log(fn.name);
+                }
+                return "";
             }
             this.builtin = {
                 avg: avg,
                 vari: vari,
                 sd: sd,
-                dist: dist,
-                eucldist: eucldist
+                help: help
             };
             for (var _i = 0, _a = this.functions; _i < _a.length; _i++) {
                 var fn = _a[_i];
@@ -272,6 +306,12 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
                     window[name] = this.builtin[name];
                 }
             }
+        };
+        Parser.prototype.split = function (content, separator) {
+            if (content) {
+                return content.split(separator);
+            }
+            return [];
         };
         return Parser;
     }());

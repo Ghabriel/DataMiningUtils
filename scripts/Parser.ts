@@ -22,6 +22,16 @@ export class Parser {
 
 	watch(input: HTMLInputElement) {
 		var self = this;
+		input.addEventListener("keydown", function(e) {
+			switch (e.keyCode) {
+				case 190:
+					if (this.value == "") {
+						this.value = self.lastCommand;
+						e.preventDefault();
+					}
+					break;
+			}
+		});
 		input.addEventListener("keyup", function(e) {
 			switch (e.keyCode) {
 				case 13:
@@ -37,8 +47,8 @@ export class Parser {
 		if (command == "") {
 			command = this.lastCommand;
 		}
-
 		this.lastCommand = command;
+
 		var matches = command.match(regex.funDef);
 		if (matches) {
 			let action = new Callable();
@@ -48,6 +58,22 @@ export class Parser {
 			this.functions.push(action);
 			this.ui.newFunction(action);
 			this.register(action);
+			return true;
+		}
+
+		if (command.substr(0, 4) == "eval") {
+			let action = new Call();
+			action.name = "eval";
+			action.params = [];
+			let result;
+			try {
+				result = eval(command);
+			} catch(e) {
+				result = "error";
+			}
+
+			this.assign("ans", result);
+			this.ui.newCall(action, result);
 			return true;
 		}
 
@@ -62,13 +88,6 @@ export class Parser {
 		}
 
 		return false;
-	}
-
-	split(content: string, separator: string): string[] {
-		if (content) {
-			return content.split(separator);
-		}
-		return [];
 	}
 
 	register(fn: Callable): void {
@@ -112,6 +131,9 @@ export class Parser {
 	}
 
 	assign(name: string, value: any): void {
+		if (typeof value == "string") {
+			value = "'" + value + "'";
+		}
 		eval("window." + name + "=" + value);
 	}
 
@@ -185,6 +207,16 @@ export class Parser {
 				name: "ans",
 				params: [],
 				body: "ans"
+			},
+			{
+				name: "dist",
+				params: ["x1","y1","x2","y2"],
+				body: "(abs(x1-x2) + abs(y1-y2))/2"
+			},
+			{
+				name: "eucldist",
+				params: ["x1","y1","x2","y2"],
+				body: "sqrt(pow(x1-x2, 2) + pow(y1-y2, 2))"
 			}
 		];
 
@@ -209,20 +241,19 @@ export class Parser {
 			return Math.sqrt(vari(...values));
 		}
 
-		function dist(x1, y1, x2, y2) {
-			return (Math.abs(x1 - x2) + Math.abs(y1 - y2))/2;
-		}
-
-		function eucldist(x1, y1, x2, y2) {
-			return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+		var self = this;
+		function help() {
+			for (let fn of self.functions) {
+				console.log(fn.name);
+			}
+			return "";
 		}
 
 		this.builtin = {
 			avg: avg,
 			vari: vari,
 			sd: sd,
-			dist: dist,
-			eucldist: eucldist
+			help: help
 		};
 
 		for (let fn of this.functions) {
@@ -234,6 +265,13 @@ export class Parser {
 				window[name] = this.builtin[name];
 			}
 		}
+	}
+
+	private split(content: string, separator: string): string[] {
+		if (content) {
+			return content.split(separator);
+		}
+		return [];
 	}
 
 	private functions: Callable[] = [];
