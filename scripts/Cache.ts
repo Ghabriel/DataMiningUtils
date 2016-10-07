@@ -1,7 +1,7 @@
 export class Cache {
 	static setup(): void {
 		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('cache.js', { scope: '../' }).then(function(reg) {
+			navigator.serviceWorker.register('cache.js', { scope: './' }).then(function(reg) {
 			if(reg.installing) {
 				console.log('Service worker installing');
 			} else if(reg.waiting) {

@@ -5,7 +5,7 @@ define("Cache", ["require", "exports"], function (require, exports) {
         }
         Cache.setup = function () {
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('cache.js', { scope: '../' }).then(function (reg) {
+                navigator.serviceWorker.register('cache.js', { scope: './' }).then(function (reg) {
                     if (reg.installing) {
                         console.log('Service worker installing');
                     }
