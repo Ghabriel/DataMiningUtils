@@ -1,5 +1,6 @@
 /// <reference path="jQuery.d.ts" />
 
+import {Cache} from "./Cache"
 import {Interface} from "./Interface"
 import {Parser} from "./Parser"
 
@@ -16,4 +17,6 @@ $(document).ready(function() {
 			input.value = "";
 		}
 	});
+
+	Cache.setup();
 });

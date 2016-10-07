@@ -1,3 +1,29 @@
+define("Cache", ["require", "exports"], function (require, exports) {
+    "use strict";
+    var Cache = (function () {
+        function Cache() {
+        }
+        Cache.setup = function () {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('cache.js', { scope: '../' }).then(function (reg) {
+                    if (reg.installing) {
+                        console.log('Service worker installing');
+                    }
+                    else if (reg.waiting) {
+                        console.log('Service worker installed');
+                    }
+                    else if (reg.active) {
+                        console.log('Service worker active');
+                    }
+                }).catch(function (error) {
+                    console.log('Registration failed with ' + error);
+                });
+            }
+        };
+        return Cache;
+    }());
+    exports.Cache = Cache;
+});
 define("types", ["require", "exports"], function (require, exports) {
     "use strict";
     var Callable = (function () {
@@ -384,7 +410,7 @@ define("Parser", ["require", "exports", "types"], function (require, exports, ty
     exports.Parser = Parser;
 });
 /// <reference path="jQuery.d.ts" />
-define("main", ["require", "exports", "Interface", "Parser"], function (require, exports, Interface_1, Parser_1) {
+define("main", ["require", "exports", "Cache", "Interface", "Parser"], function (require, exports, Cache_1, Interface_1, Parser_1) {
     "use strict";
     $(document).ready(function () {
         var input = document.querySelector("#command");
@@ -398,5 +424,6 @@ define("main", ["require", "exports", "Interface", "Parser"], function (require,
                 input.value = "";
             }
         });
+        Cache_1.Cache.setup();
     });
 });
